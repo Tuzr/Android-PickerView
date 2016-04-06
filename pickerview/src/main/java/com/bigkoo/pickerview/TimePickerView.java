@@ -7,6 +7,7 @@ import android.widget.TextView;
 
 import com.bigkoo.pickerview.view.BasePickerView;
 import com.bigkoo.pickerview.view.WheelTime;
+import com.bigkoo.pickerview.view.WheelTime.OnWheelTimeSelectListener;
 
 import java.text.ParseException;
 import java.util.Calendar;
@@ -15,13 +16,14 @@ import java.util.Date;
 /**
  * Created by Sai on 15/11/22.
  */
-public class TimePickerView extends BasePickerView implements View.OnClickListener {
+public class TimePickerView extends BasePickerView implements View.OnClickListener, OnWheelTimeSelectListener {
+
     public enum Type {
         ALL, YEAR_MONTH_DAY, HOURS_MINS, MONTH_DAY_HOUR_MIN , YEAR_MONTH
-    }// 四种选择模式，年月日时分，年月日，时分，月日时分
+    }// 四种选择模式，年月日时分，年月日，时分，月日时分，年月
 
     WheelTime wheelTime;
-    private View btnSubmit, btnCancel;
+    private View btnSubmit, btnCancel, timeTopBar;
     private TextView tvTitle;
     private static final String TAG_SUBMIT = "submit";
     private static final String TAG_CANCEL = "cancel";
@@ -29,7 +31,6 @@ public class TimePickerView extends BasePickerView implements View.OnClickListen
 
     public TimePickerView(Context context, Type type) {
         super(context);
-
         LayoutInflater.from(context).inflate(R.layout.pickerview_time, contentContainer);
         // -----确定和取消按钮
         btnSubmit = findViewById(R.id.btnSubmit);
@@ -43,6 +44,9 @@ public class TimePickerView extends BasePickerView implements View.OnClickListen
         // ----时间转轮
         final View timepickerview = findViewById(R.id.timepicker);
         wheelTime = new WheelTime(timepickerview, type);
+        wheelTime.setOnWheelTimeSelectListener(this);
+
+        timeTopBar = findViewById(R.id.timeTopBar);
 
         //默认选中当前时间
         Calendar calendar = Calendar.getInstance();
@@ -53,7 +57,14 @@ public class TimePickerView extends BasePickerView implements View.OnClickListen
         int hours = calendar.get(Calendar.HOUR_OF_DAY);
         int minute = calendar.get(Calendar.MINUTE);
         wheelTime.setPicker(year, month, day, hours, minute);
+    }
 
+    /**
+     * Set has time unit label, ex: Year,Month,Day,Hour,Min
+     * @param hasLabel If true then will display unit, else not.
+     */
+    public void setHasLabel(boolean hasLabel) {
+        wheelTime.setHasLabel(hasLabel);
     }
 
     /**
@@ -118,31 +129,84 @@ public class TimePickerView extends BasePickerView implements View.OnClickListen
     public void onClick(View v) {
         String tag = (String) v.getTag();
         if (tag.equals(TAG_CANCEL)) {
-            dismiss();
-            return;
+            if (timeSelectListener != null) {
+                timeSelectListener.onClickCancelButton();
+            }
         } else {
+            if (timeSelectListener != null) {
+                timeSelectListener.onClickSubmitButton();
+            }
+            /*
             if (timeSelectListener != null) {
                 try {
                     Date date = WheelTime.dateFormat.parse(wheelTime.getTime());
-                    timeSelectListener.onTimeSelect(date);
+                    timeSelectListener.onClickSubmit(date);
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
             }
             dismiss();
             return;
+            */
+        }
+    }
+
+    @Override
+    public void onSelectDateTime(Date date) {
+        if(timeSelectListener != null) {
+            timeSelectListener.onTimeSelect(date);
         }
     }
 
     public interface OnTimeSelectListener {
-        public void onTimeSelect(Date date);
+        //public void onClickSubmit(Date date);
+        void onTimeSelect(Date date);
+        void onClickSubmitButton();
+        void onClickCancelButton();
     }
 
     public void setOnTimeSelectListener(OnTimeSelectListener timeSelectListener) {
         this.timeSelectListener = timeSelectListener;
     }
 
+    @Override
     public void setTitle(String title){
         tvTitle.setText(title);
+    }
+
+    @Override
+    public void setHasTopBar(boolean hasTopBar) {
+        if(hasTopBar) {
+            timeTopBar.setVisibility(View.VISIBLE);
+        }else{
+            timeTopBar.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void setHasCancelButton(boolean hasCancelButton) {
+        if(hasCancelButton) {
+            btnCancel.setVisibility(View.VISIBLE);
+        }else{
+            btnCancel.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    @Override
+    public void setHasSubmitButton(boolean hasSubmitButton) {
+        if(hasSubmitButton) {
+            btnSubmit.setVisibility(View.VISIBLE);
+        }else{
+            btnSubmit.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    public Date getSelectedDate() {
+        Date date = null;
+        try {
+            date = WheelTime.dateFormat.parse(wheelTime.getTime());
+        } catch (ParseException e) {
+        }
+        return date;
     }
 }

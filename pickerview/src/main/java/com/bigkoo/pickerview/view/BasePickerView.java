@@ -2,6 +2,7 @@ package com.bigkoo.pickerview.view;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -19,10 +20,15 @@ import com.bigkoo.pickerview.listener.OnDismissListener;
  * Created by Sai on 15/11/22.
  * 精仿iOSPickerViewController控件
  */
-public class BasePickerView {
+public abstract class BasePickerView {
     private final FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM
     );
+
+    public abstract void setTitle(String title);
+    public abstract void setHasTopBar(boolean hasTopBar);
+    public abstract void setHasCancelButton(boolean hasCancelButton);
+    public abstract void setHasSubmitButton(boolean hasSubmitButton);
 
     private Context context;
     protected ViewGroup contentContainer;
@@ -35,10 +41,12 @@ public class BasePickerView {
     private Animation outAnim;
     private Animation inAnim;
     private int gravity = Gravity.BOTTOM;
+    private boolean hasAnimation = false;
+
+    private static BasePickerView currentPickerView = null;
 
     public BasePickerView(Context context){
         this.context = context;
-
         initViews();
         init();
         initEvents();
@@ -68,16 +76,46 @@ public class BasePickerView {
      */
     private void onAttached(View view) {
         decorView.addView(view);
-        contentContainer.startAnimation(inAnim);
+
+        if (hasAnimation) {
+            contentContainer.startAnimation(inAnim);
+        }
+
+        currentPickerView = this;
     }
     /**
      * 添加这个View到Activity的根视图
      */
-    public void show() {
+    public void show(boolean hasAnimation) {
         if (isShowing()) {
             return;
         }
+
+        if(currentPickerView != null) {
+            currentPickerView.dismiss();
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while(currentPickerView.isDismissing) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                }
+            }).start();
+        }
+
+        this.setAnimationEnable(hasAnimation);
+
         onAttached(rootView);
+    }
+
+    public void show() {
+        this.show(true);
     }
     /**
      * 检测该View是不是已经添加到根视图
@@ -108,6 +146,7 @@ public class BasePickerView {
                         //从activity根视图移除
                         decorView.removeView(rootView);
                         isDismissing = false;
+                        currentPickerView = null;
                         if (onDismissListener != null) {
                             onDismissListener.onDismiss(BasePickerView.this);
                         }
@@ -120,8 +159,15 @@ public class BasePickerView {
 
             }
         });
-        contentContainer.startAnimation(outAnim);
-        isDismissing = true;
+
+        if (hasAnimation) {
+            contentContainer.startAnimation(outAnim);
+            isDismissing = true;
+        }else{
+            decorView.removeView(rootView);
+            isDismissing = false;
+            currentPickerView = null;
+        }
     }
     public Animation getInAnimation() {
         int res = PickerViewAnimateUtil.getAnimationResource(this.gravity, true);
@@ -143,8 +189,7 @@ public class BasePickerView {
 
         if (isCancelable) {
             view.setOnTouchListener(onCancelableTouchListener);
-        }
-        else{
+        }else{
             view.setOnTouchListener(null);
         }
         return this;
@@ -164,5 +209,28 @@ public class BasePickerView {
 
     public View findViewById(int id){
         return contentContainer.findViewById(id);
+    }
+
+    /**
+     * Set if pickerView is show,then mask other UI touch event.
+     * @param isMask If true will set masked, else not.
+     */
+    public void setMasked(boolean isMask) {
+        FrameLayout maskView = (FrameLayout)rootView.findViewById(R.id.outmost_container);
+        maskView.setClickable(isMask);
+
+        if(isMask) {
+            maskView.setBackgroundColor(context.getResources().getColor(R.color.bgColor_overlay));
+        }else {
+            maskView.setBackgroundColor(Color.TRANSPARENT);
+        }
+    }
+
+    /**
+     * Set pickerView animation enable when appear and disappear.
+     * @param enable If true will enable, else disable.
+     */
+    private void setAnimationEnable(boolean enable) {
+        hasAnimation = enable;
     }
 }

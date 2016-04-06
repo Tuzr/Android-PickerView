@@ -7,7 +7,8 @@
     <include
         layout="@layout/include_pickerview_topbar"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/pickerview_topbar_height"/>
+        android:layout_height="@dimen/pickerview_topbar_height"
+        android:id="@+id/timeTopBar" />
 
     <LinearLayout
         android:id="@+id/timepicker"

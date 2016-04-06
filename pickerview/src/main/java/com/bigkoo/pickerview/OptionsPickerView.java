@@ -7,19 +7,20 @@ import android.widget.TextView;
 
 import com.bigkoo.pickerview.view.BasePickerView;
 import com.bigkoo.pickerview.view.WheelOptions;
-
+import com.bigkoo.pickerview.view.WheelOptions.OnWheelOptionsSelectListener;
 import java.util.ArrayList;
 
 /**
  * Created by Sai on 15/11/22.
  */
-public class OptionsPickerView<T> extends BasePickerView implements View.OnClickListener {
+public class OptionsPickerView<T> extends BasePickerView implements View.OnClickListener, OnWheelOptionsSelectListener {
     WheelOptions wheelOptions;
-    private View btnSubmit, btnCancel;
+    private View btnSubmit, btnCancel , optionsTopBar;
     private TextView tvTitle;
     private OnOptionsSelectListener optionsSelectListener;
     private static final String TAG_SUBMIT = "submit";
     private static final String TAG_CANCEL = "cancel";
+
     public OptionsPickerView(Context context) {
         super(context);
         LayoutInflater.from(context).inflate(R.layout.pickerview_options, contentContainer);
@@ -33,8 +34,11 @@ public class OptionsPickerView<T> extends BasePickerView implements View.OnClick
         //顶部标题
         tvTitle = (TextView) findViewById(R.id.tvTitle);
         // ----转轮
-        final View optionspicker = findViewById(R.id.optionspicker);
-        wheelOptions = new WheelOptions(optionspicker);
+        final View optionsPicker = findViewById(R.id.optionspicker);
+        wheelOptions = new WheelOptions(optionsPicker);
+        wheelOptions.setOnWheelOptionsSelectListener(this);
+
+        optionsTopBar = findViewById(R.id.optionsTopBar);
     }
     public void setPicker(ArrayList<T> optionsItems) {
         wheelOptions.setPicker(optionsItems, null, null, false);
@@ -108,9 +112,8 @@ public class OptionsPickerView<T> extends BasePickerView implements View.OnClick
         wheelOptions.setCyclic(cyclic);
     }
     public void setCyclic(boolean cyclic1,boolean cyclic2,boolean cyclic3) {
-        wheelOptions.setCyclic(cyclic1,cyclic2,cyclic3);
+        wheelOptions.setCyclic(cyclic1, cyclic2, cyclic3);
     }
-
 
     @Override
     public void onClick(View v)
@@ -118,31 +121,75 @@ public class OptionsPickerView<T> extends BasePickerView implements View.OnClick
         String tag=(String) v.getTag();
         if(tag.equals(TAG_CANCEL))
         {
-            dismiss();
-            return;
+            if(optionsSelectListener != null) {
+                optionsSelectListener.onClickCancelButton();
+            }
         }
         else
         {
-            if(optionsSelectListener!=null)
-            {
+            if(optionsSelectListener!=null) {
+                optionsSelectListener.onClickSubmitButton();
+                /*
                 int[] optionsCurrentItems=wheelOptions.getCurrentItems();
                 optionsSelectListener.onOptionsSelect(optionsCurrentItems[0], optionsCurrentItems[1], optionsCurrentItems[2]);
+                */
             }
-            dismiss();
-            return;
+        }
+    }
+
+    @Override
+    public void onRowSelected(int optionIndex, int rowIndex) {
+        if(optionsSelectListener != null) {
+            optionsSelectListener.onRowSelected(optionIndex, rowIndex);
         }
     }
 
     public interface OnOptionsSelectListener {
-        public void onOptionsSelect(int options1, int option2, int options3);
+        //public void onOptionsSelect(int options1, int option2, int options3);
+        void onRowSelected(int optionIndex, int rowIndex);
+        void onClickSubmitButton();
+        void onClickCancelButton();
     }
 
-    public void setOnoptionsSelectListener(
+    public void setOnOptionsSelectListener(
             OnOptionsSelectListener optionsSelectListener) {
         this.optionsSelectListener = optionsSelectListener;
     }
 
-    public void setTitle(String title){
+    @Override
+    public void setTitle(String title) {
         tvTitle.setText(title);
+    }
+
+    @Override
+    public void setHasTopBar(boolean hasTopBar) {
+        if(hasTopBar) {
+            optionsTopBar.setVisibility(View.VISIBLE);
+        }else{
+            optionsTopBar.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void setHasCancelButton(boolean hasCancelButton) {
+        if(hasCancelButton) {
+            btnCancel.setVisibility(View.VISIBLE);
+        }else{
+            btnCancel.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    @Override
+    public void setHasSubmitButton(boolean hasSubmitButton) {
+        if(hasSubmitButton) {
+            btnSubmit.setVisibility(View.VISIBLE);
+        }else{
+            btnSubmit.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    public int getRowIndex(int optionIndex) {
+        int[] optionsCurrentItems = wheelOptions.getCurrentItems();
+        return optionsCurrentItems[optionIndex];
     }
 }
