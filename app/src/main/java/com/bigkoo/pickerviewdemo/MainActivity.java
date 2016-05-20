@@ -7,18 +7,19 @@ import java.util.Calendar;
 import java.util.Date;
 
 import android.app.Activity;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewTreeObserver;
 import android.widget.TextView;
 
 import com.bigkoo.pickerview.OptionsPickerView;
 import com.bigkoo.pickerview.TimePickerView;
 import com.bigkoo.pickerviewdemo.bean.ProvinceBean;
-import com.bigkoo.pickerview.listener.OnDismissListener;
 
-public class MainActivity extends Activity implements OnDismissListener{
+public class MainActivity extends Activity implements TimePickerView.onLayoutListener, OptionsPickerView.onLayoutListener {
 
     private ArrayList<ProvinceBean> options1Items = new ArrayList<ProvinceBean>();
     private ArrayList<ArrayList<String>> options2Items = new ArrayList<ArrayList<String>>();
@@ -28,16 +29,6 @@ public class MainActivity extends Activity implements OnDismissListener{
     OptionsPickerView pvOptions;
     View vMasker;
 
-    private enum PvType{
-        NONE,
-        TIME,
-        OPTIONS,
-    }
-
-    PvType currentPvType = PvType.NONE;
-
-    private boolean changePV = false;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,14 +37,21 @@ public class MainActivity extends Activity implements OnDismissListener{
         tvTime=(TextView) findViewById(R.id.tvTime);
         tvOptions=(TextView) findViewById(R.id.tvOptions);
         //时间选择器
-        pvTime = new TimePickerView(this, TimePickerView.Type.ALL);
+        pvTime = new TimePickerView(this, TimePickerView.Type.MINS_SEC);
         //控制时间范围
         Calendar calendar = Calendar.getInstance();
 
         pvTime.setHasLabel(true);
-        pvTime.setHasTopBar(true);
-        pvTime.setHasCancelButton(true);
-        pvTime.setHasSubmitButton(true);
+        //pvTime.setHourMinLabel("小時","分鐘");
+
+        //pvTime.setHasDivider(true);
+
+        //pvTime.setDividerColor(Color.BLUE);
+        //pvTime.setDividerHeight(50);
+
+        //pvTime.setHasTopBar(false);
+        //pvTime.setHasCancelButton(true);
+        //pvTime.setHasSubmitButton(true);
 
         pvTime.setTitle("選擇時間");
 
@@ -63,17 +61,19 @@ public class MainActivity extends Activity implements OnDismissListener{
         pvTime.setTime(new Date());
         pvTime.setCyclic(true);
         pvTime.setCancelable(false);
+        //pvTime.show(false);
+        pvTime.setOnLayoutListener(this);
 
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
+        /*
         Date date = null;
         try {
             date = format.parse("2015-02-18 11:22");
         } catch (ParseException e) {
         }
         pvTime.setTime(date);
-
-        pvTime.setOnDismissListener(this);
+        */
 
         //时间选择后回调
         pvTime.setOnTimeSelectListener(new TimePickerView.OnTimeSelectListener() {
@@ -83,18 +83,16 @@ public class MainActivity extends Activity implements OnDismissListener{
             }
 
             @Override
-            public void onClickSubmitButton() {
+            public void onClickSubmitButton(TimePickerView tpv) {
                 pvTime.dismiss();
-                currentPvType = PvType.NONE;
 
                 String result = getTime(pvTime.getSelectedDate());
                 Log.d("debug","Select date is: " + result);
             }
 
             @Override
-            public void onClickCancelButton() {
+            public void onClickCancelButton(TimePickerView tpv) {
                 pvTime.dismiss();
-                currentPvType = PvType.NONE;
             }
         });
         //弹出时间选择器
@@ -103,29 +101,19 @@ public class MainActivity extends Activity implements OnDismissListener{
             @Override
             public void onClick(View v) {
 
-                switch (currentPvType) {
-                    case NONE:
-                        pvTime.show();
-                        currentPvType = PvType.TIME;
-                        break;
-                    case TIME:
-                        pvTime.dismiss();
-                        currentPvType = PvType.NONE;
-                        break;
-                    case OPTIONS:
-                        //changePV = true;
-                        pvOptions.dismiss();
-                        pvTime.show();
-                        currentPvType = PvType.TIME;
-                        break;
+                if(pvTime.isShowing()) {
+                    //pvTime.removeOnLayoutListener();
+                    pvTime.dismiss();
+                }else{
+                    //pvOptions.removeOnLayoutListener();
+                    pvTime.setOnLayoutListener(MainActivity.this);
+                    pvTime.show(false);
                 }
             }
         });
 
         //选项选择器
         pvOptions = new OptionsPickerView(this);
-        pvOptions.setOnDismissListener(this);
-        //pvOptions.setAnimationEnable(true);
 
         //选项1
         options1Items.add(new ProvinceBean(0,"广东","广东省，以岭南东道、广南东路得名","其他数据"));
@@ -235,12 +223,13 @@ public class MainActivity extends Activity implements OnDismissListener{
                 //设置选择的三级单位
 //        pwOptions.setLabels("省", "市", "区");
                 //pvOptions.setTitle("选择城市");
-        pvOptions.setHasTopBar(false);
+        //pvOptions.setHasTopBar(false);
 
         pvOptions.setCyclic(false, true, false);
         //设置默认选中的三级项目
         //监听确定选择按钮
         pvOptions.setSelectOptions(0, 3);
+        pvOptions.show(false);
 
         final ArrayList<String> item0 = conditionItems;
         final ArrayList<String> item1 = options2Items_01;
@@ -283,12 +272,12 @@ public class MainActivity extends Activity implements OnDismissListener{
             }
 
             @Override
-            public void onClickSubmitButton() {
+            public void onClickSubmitButton(OptionsPickerView opv) {
 
             }
 
             @Override
-            public void onClickCancelButton() {
+            public void onClickCancelButton(OptionsPickerView opv) {
 
             }
         });
@@ -298,46 +287,30 @@ public class MainActivity extends Activity implements OnDismissListener{
             @Override
             public void onClick(View v) {
 
-                switch (currentPvType) {
-                    case NONE:
-                        pvOptions.show();
-                        currentPvType = PvType.OPTIONS;
-                        break;
-                    case TIME:
-                        //changePV = true;
-                        pvTime.dismiss();
-                        pvOptions.show();
-                        currentPvType = PvType.OPTIONS;
-                        break;
-                    case OPTIONS:
-                        pvOptions.dismiss();
-                        currentPvType = PvType.NONE;
-                        break;
+                if(pvOptions.isShowing()) {
+                    //pvOptions.removeOnLayoutListener();
+                    pvOptions.dismiss();
+                }else{
+                    //pvTime.removeOnLayoutListener();
+                    pvOptions.setOnLayoutListener(MainActivity.this);
+                    pvOptions.show(false);
                 }
             }
         });
     }
 
     public static String getTime(Date date) {
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return format.format(date);
     }
 
     @Override
-    public void onDismiss(Object o) {
+    public void onLayoutChange(TimePickerView tpv, int width, int height) {
+        Log.e("TimePickerView",String.format("width:%d height:%d", width, height));
+    }
 
-        if(changePV) {
-            switch (currentPvType) {
-                case TIME:
-                    pvOptions.show();
-                    currentPvType = PvType.OPTIONS;
-                    break;
-                case OPTIONS:
-                    pvTime.show();
-                    currentPvType = PvType.TIME;
-                    break;
-            }
-            changePV = false;
-        }
+    @Override
+    public void onLayoutChange(OptionsPickerView tpv, int width, int height) {
+        Log.e("OptionsPickerView",String.format("width:%d height:%d", width, height));
     }
 }

@@ -265,6 +265,7 @@ public class WheelView extends View {
 
     public final void setCurrentItem(int currentItem) {
         this.initPosition = currentItem;
+        selectedItem = currentItem;
         totalScrollY = 0;//回归顶部，不然重设setCurrentItem的话位置会偏移的，就会显示出不对位置的数据
         invalidate();
     }

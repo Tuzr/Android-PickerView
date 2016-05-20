@@ -3,6 +3,7 @@ package com.bigkoo.pickerview;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.TextView;
 
 import com.bigkoo.pickerview.view.BasePickerView;
@@ -18,20 +19,27 @@ import java.util.Date;
  */
 public class TimePickerView extends BasePickerView implements View.OnClickListener, OnWheelTimeSelectListener {
 
+    public interface onLayoutListener
+    {
+        void onLayoutChange(TimePickerView tpv,int width, int height);
+    }
+
     public enum Type {
-        ALL, YEAR_MONTH_DAY, HOURS_MINS, MONTH_DAY_HOUR_MIN , YEAR_MONTH
-    }// 四种选择模式，年月日时分，年月日，时分，月日时分，年月
+        ALL, YEAR_MONTH_DAY, HOURS_MINS, MINS_SEC, MONTH_DAY_HOUR_MIN , YEAR_MONTH
+    }// 四种选择模式，年月日时分，年月日，时分，分秒，月日时分，年月
 
     WheelTime wheelTime;
-    private View btnSubmit, btnCancel, timeTopBar;
+    private View btnSubmit, btnCancel, timeTopBar, divider, mainLL;
     private TextView tvTitle;
     private static final String TAG_SUBMIT = "submit";
     private static final String TAG_CANCEL = "cancel";
     private OnTimeSelectListener timeSelectListener;
+    private onLayoutListener layoutListener;
 
     public TimePickerView(Context context, Type type) {
         super(context);
         LayoutInflater.from(context).inflate(R.layout.pickerview_time, contentContainer);
+        mainLL = findViewById(R.id.timeMainLL);
         // -----确定和取消按钮
         btnSubmit = findViewById(R.id.btnSubmit);
         btnSubmit.setTag(TAG_SUBMIT);
@@ -46,7 +54,9 @@ public class TimePickerView extends BasePickerView implements View.OnClickListen
         wheelTime = new WheelTime(timepickerview, type);
         wheelTime.setOnWheelTimeSelectListener(this);
 
+        divider = findViewById(R.id.timeDivider);
         timeTopBar = findViewById(R.id.timeTopBar);
+        timeTopBar.setVisibility(View.GONE);
 
         //默认选中当前时间
         Calendar calendar = Calendar.getInstance();
@@ -56,7 +66,26 @@ public class TimePickerView extends BasePickerView implements View.OnClickListen
         int day = calendar.get(Calendar.DAY_OF_MONTH);
         int hours = calendar.get(Calendar.HOUR_OF_DAY);
         int minute = calendar.get(Calendar.MINUTE);
-        wheelTime.setPicker(year, month, day, hours, minute);
+        int sec = calendar.get(Calendar.SECOND);
+        wheelTime.setPicker(year, month, day, hours, minute, sec);
+
+        ViewTreeObserver mainVto = mainLL.getViewTreeObserver();
+        mainVto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+
+            @Override
+            public void onGlobalLayout() {
+                int width = mainLL.getMeasuredWidth();
+                int height = mainLL.getMeasuredHeight();
+
+                if(layoutListener != null) {
+                    if(isShowing()) {
+                        layoutListener.onLayoutChange(TimePickerView.this, width, height);
+                    }else{
+                        layoutListener.onLayoutChange(TimePickerView.this, width, 0);
+                    }
+                }
+            }
+        });
     }
 
     /**
@@ -65,6 +94,10 @@ public class TimePickerView extends BasePickerView implements View.OnClickListen
      */
     public void setHasLabel(boolean hasLabel) {
         wheelTime.setHasLabel(hasLabel);
+    }
+
+    public void setHourMinLabel(String hour, String min) {
+        wheelTime.setHourMinLabel(hour, min);
     }
 
     /**
@@ -93,7 +126,8 @@ public class TimePickerView extends BasePickerView implements View.OnClickListen
         int day = calendar.get(Calendar.DAY_OF_MONTH);
         int hours = calendar.get(Calendar.HOUR_OF_DAY);
         int minute = calendar.get(Calendar.MINUTE);
-        wheelTime.setPicker(year, month, day, hours, minute);
+        int sec = calendar.get(Calendar.SECOND);
+        wheelTime.setPicker(year, month, day, hours, minute, sec);
     }
 
 //    /**
@@ -130,11 +164,11 @@ public class TimePickerView extends BasePickerView implements View.OnClickListen
         String tag = (String) v.getTag();
         if (tag.equals(TAG_CANCEL)) {
             if (timeSelectListener != null) {
-                timeSelectListener.onClickCancelButton();
+                timeSelectListener.onClickCancelButton(this);
             }
         } else {
             if (timeSelectListener != null) {
-                timeSelectListener.onClickSubmitButton();
+                timeSelectListener.onClickSubmitButton(this);
             }
             /*
             if (timeSelectListener != null) {
@@ -161,8 +195,8 @@ public class TimePickerView extends BasePickerView implements View.OnClickListen
     public interface OnTimeSelectListener {
         //public void onClickSubmit(Date date);
         void onTimeSelect(Date date);
-        void onClickSubmitButton();
-        void onClickCancelButton();
+        void onClickSubmitButton(TimePickerView tpv);
+        void onClickCancelButton(TimePickerView tpv);
     }
 
     public void setOnTimeSelectListener(OnTimeSelectListener timeSelectListener) {
@@ -172,6 +206,23 @@ public class TimePickerView extends BasePickerView implements View.OnClickListen
     @Override
     public void setTitle(String title){
         tvTitle.setText(title);
+    }
+
+    @Override
+    public void setHasDivider(boolean hasDivider) {
+        if(hasDivider) {
+            divider.setVisibility(View.VISIBLE);
+        }else{
+            divider.setVisibility(View.GONE);
+        }
+    }
+
+    public void setDividerHeight(int height) {
+        divider.getLayoutParams().height = height;
+    }
+
+    public void setDividerColor(int color) {
+        divider.setBackgroundColor(color);
     }
 
     @Override
@@ -209,4 +260,13 @@ public class TimePickerView extends BasePickerView implements View.OnClickListen
         }
         return date;
     }
+
+    public void setOnLayoutListener(onLayoutListener listener) {
+        layoutListener = listener;
+    }
+
+    public void removeOnLayoutListener() {
+        layoutListener = null;
+    }
+
 }

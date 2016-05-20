@@ -3,6 +3,7 @@ package com.bigkoo.pickerview.view;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Handler;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -26,6 +27,7 @@ public abstract class BasePickerView {
     );
 
     public abstract void setTitle(String title);
+    public abstract void setHasDivider(boolean hasDivider);
     public abstract void setHasTopBar(boolean hasTopBar);
     public abstract void setHasCancelButton(boolean hasCancelButton);
     public abstract void setHasSubmitButton(boolean hasSubmitButton);
@@ -41,15 +43,19 @@ public abstract class BasePickerView {
     private Animation outAnim;
     private Animation inAnim;
     private int gravity = Gravity.BOTTOM;
-    private boolean hasAnimation = false;
+    private boolean hasAnimation = true;
 
     private static BasePickerView currentPickerView = null;
+
+    private Handler handler = null;
 
     public BasePickerView(Context context){
         this.context = context;
         initViews();
         init();
         initEvents();
+
+        handler = new Handler(context.getMainLooper());
     }
 
     protected void initViews(){
@@ -67,7 +73,12 @@ public abstract class BasePickerView {
         inAnim = getInAnimation();
         outAnim = getOutAnimation();
     }
+
     protected void initEvents() {
+    }
+
+    private void runOnUiThread(Runnable r) {
+        handler.post(r);
     }
     /**
      * show的时候调用
@@ -91,13 +102,15 @@ public abstract class BasePickerView {
             return;
         }
 
+        this.setAnimationEnable(hasAnimation);
+
         if(currentPickerView != null) {
             currentPickerView.dismiss();
 
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    while(currentPickerView.isDismissing) {
+                    while(currentPickerView != null) {
                         try {
                             Thread.sleep(100);
                         } catch (InterruptedException e) {
@@ -105,13 +118,17 @@ public abstract class BasePickerView {
                         }
                     }
 
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            onAttached(rootView);
+                        }
+                    });
                 }
             }).start();
+        }else {
+            onAttached(rootView);
         }
-
-        this.setAnimationEnable(hasAnimation);
-
-        onAttached(rootView);
     }
 
     public void show() {
@@ -123,8 +140,16 @@ public abstract class BasePickerView {
      * @return 如果视图已经存在该View返回true
      */
     public boolean isShowing() {
+
+        if(currentPickerView == null) {
+            return false;
+        }else {
+            return currentPickerView.equals(this);
+        }
+        /*
         View view = decorView.findViewById(R.id.outmost_container);
         return view != null;
+        */
     }
     public void dismiss() {
         if (isDismissing) {

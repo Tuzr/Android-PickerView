@@ -3,6 +3,7 @@ package com.bigkoo.pickerview;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.TextView;
 
 import com.bigkoo.pickerview.view.BasePickerView;
@@ -14,16 +15,25 @@ import java.util.ArrayList;
  * Created by Sai on 15/11/22.
  */
 public class OptionsPickerView<T> extends BasePickerView implements View.OnClickListener, OnWheelOptionsSelectListener {
+
+    public interface onLayoutListener
+    {
+        void onLayoutChange(OptionsPickerView tpv,int width, int height);
+    }
+
     WheelOptions wheelOptions;
-    private View btnSubmit, btnCancel , optionsTopBar;
+    private View btnSubmit, btnCancel , optionsTopBar, divider, mainLL;
     private TextView tvTitle;
     private OnOptionsSelectListener optionsSelectListener;
+    private onLayoutListener layoutListener;
     private static final String TAG_SUBMIT = "submit";
     private static final String TAG_CANCEL = "cancel";
 
     public OptionsPickerView(Context context) {
         super(context);
         LayoutInflater.from(context).inflate(R.layout.pickerview_options, contentContainer);
+
+        mainLL = findViewById(R.id.optionsMainLL);
         // -----确定和取消按钮
         btnSubmit = findViewById(R.id.btnSubmit);
         btnSubmit.setTag(TAG_SUBMIT);
@@ -39,6 +49,27 @@ public class OptionsPickerView<T> extends BasePickerView implements View.OnClick
         wheelOptions.setOnWheelOptionsSelectListener(this);
 
         optionsTopBar = findViewById(R.id.optionsTopBar);
+        divider = findViewById(R.id.optionsDivider);
+
+        optionsTopBar.setVisibility(View.GONE);
+
+        ViewTreeObserver mainVto = mainLL.getViewTreeObserver();
+        mainVto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+
+            @Override
+            public void onGlobalLayout() {
+                int width = mainLL.getMeasuredWidth();
+                int height = mainLL.getMeasuredHeight();
+
+                if(layoutListener != null) {
+                    if(isShowing()) {
+                        layoutListener.onLayoutChange(OptionsPickerView.this, width, height);
+                    }else{
+                        layoutListener.onLayoutChange(OptionsPickerView.this, width, 0);
+                    }
+                }
+            }
+        });
     }
     public void setPicker(ArrayList<T> optionsItems) {
         wheelOptions.setPicker(optionsItems, null, null, false);
@@ -122,13 +153,13 @@ public class OptionsPickerView<T> extends BasePickerView implements View.OnClick
         if(tag.equals(TAG_CANCEL))
         {
             if(optionsSelectListener != null) {
-                optionsSelectListener.onClickCancelButton();
+                optionsSelectListener.onClickCancelButton(this);
             }
         }
         else
         {
             if(optionsSelectListener!=null) {
-                optionsSelectListener.onClickSubmitButton();
+                optionsSelectListener.onClickSubmitButton(this);
                 /*
                 int[] optionsCurrentItems=wheelOptions.getCurrentItems();
                 optionsSelectListener.onOptionsSelect(optionsCurrentItems[0], optionsCurrentItems[1], optionsCurrentItems[2]);
@@ -147,8 +178,8 @@ public class OptionsPickerView<T> extends BasePickerView implements View.OnClick
     public interface OnOptionsSelectListener {
         //public void onOptionsSelect(int options1, int option2, int options3);
         void onRowSelected(int optionIndex, int rowIndex);
-        void onClickSubmitButton();
-        void onClickCancelButton();
+        void onClickSubmitButton(OptionsPickerView opv);
+        void onClickCancelButton(OptionsPickerView opv);
     }
 
     public void setOnOptionsSelectListener(
@@ -159,6 +190,23 @@ public class OptionsPickerView<T> extends BasePickerView implements View.OnClick
     @Override
     public void setTitle(String title) {
         tvTitle.setText(title);
+    }
+
+    @Override
+    public void setHasDivider(boolean hasDivider) {
+        if(hasDivider) {
+            divider.setVisibility(View.VISIBLE);
+        }else{
+            divider.setVisibility(View.GONE);
+        }
+    }
+
+    public void setDividerHeight(int height) {
+        divider.getLayoutParams().height = height;
+    }
+
+    public void setDividerColor(int color) {
+        divider.setBackgroundColor(color);
     }
 
     @Override
@@ -191,5 +239,13 @@ public class OptionsPickerView<T> extends BasePickerView implements View.OnClick
     public int getRowIndex(int optionIndex) {
         int[] optionsCurrentItems = wheelOptions.getCurrentItems();
         return optionsCurrentItems[optionIndex];
+    }
+
+    public void setOnLayoutListener(onLayoutListener listener) {
+        layoutListener = listener;
+    }
+
+    public void removeOnLayoutListener() {
+        layoutListener = null;
     }
 }

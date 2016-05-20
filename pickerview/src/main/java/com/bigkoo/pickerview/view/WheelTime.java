@@ -18,7 +18,7 @@ import android.view.View;
 
 
 public class WheelTime {
-	public static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+	public static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	public interface OnWheelTimeSelectListener{
 		public void onSelectDateTime(Date date);
@@ -31,9 +31,10 @@ public class WheelTime {
 	private WheelView wv_day;
 	private WheelView wv_hours;
 	private WheelView wv_mins;
+	private WheelView wv_sec;
 
 	private Type type;
-	public static final int DEFULT_START_YEAR = 1990;
+	public static final int DEFULT_START_YEAR = 1970;
 	public static final int DEFULT_END_YEAR = 2100;
 	private int startYear = DEFULT_START_YEAR;
 	private int endYear = DEFULT_END_YEAR;
@@ -66,16 +67,26 @@ public class WheelTime {
 		wv_day.setLabel(hasLabel? context.getString(R.string.pickerview_day) : null);
 		wv_hours.setLabel(hasLabel? context.getString(R.string.pickerview_hours) : null);// 添加文字
 		wv_mins.setLabel(hasLabel? context.getString(R.string.pickerview_minutes) : null);// 添加文字
+		wv_sec.setLabel(hasLabel? context.getString(R.string.pickerview_seconds) : null);
 	}
+
+	public void setHourMinLabel(String hour, String min) {
+		wv_hours.setLabel(hour);// 添加文字
+		wv_mins.setLabel(min);// 添加文字
+	}
+
 
 	public void setPicker(int year ,int month,int day){
 		this.setPicker(year, month, day, 0, 0);
 	}
-	
+
+	public void setPicker(int year ,int month ,int day,int h,int m) {
+		this.setPicker(year, month, day, h, m, 0);
+	}
 	/**
 	 * @Description: TODO 弹出日期时间选择器
 	 */
-	public void setPicker(int year ,int month ,int day,int h,int m) {
+	public void setPicker(int year ,int month ,int day,int h,int m,int s) {
 		// 添加大小月月份并将其转换为list,方便之后的判断
 		String[] months_big = { "1", "3", "5", "7", "8", "10", "12" };
 		String[] months_little = { "4", "6", "9", "11" };
@@ -123,6 +134,10 @@ public class WheelTime {
 		wv_mins.setAdapter(new NumericWheelAdapter(0, 59));
 		//wv_mins.setLabel(context.getString(R.string.pickerview_minutes));// 添加文字
 		wv_mins.setCurrentItem(m);
+
+		wv_sec = (WheelView)view.findViewById(R.id.sec);
+		wv_sec.setAdapter(new NumericWheelAdapter(0, 59));
+		wv_sec.setCurrentItem(s);
 
 		// 添加"年"监听
 		OnItemSelectedListener wheelListener_year = new OnItemSelectedListener() {
@@ -217,6 +232,7 @@ public class WheelTime {
 
 		wv_hours.setOnItemSelectedListener(wheelListener_dateTime);
 		wv_mins.setOnItemSelectedListener(wheelListener_dateTime);
+		wv_sec.setOnItemSelectedListener(wheelListener_dateTime);
 		wv_day.setOnItemSelectedListener(wheelListener_dateTime);
 
 		wv_year.setOnItemSelectedListener(wheelListener_year);
@@ -224,6 +240,9 @@ public class WheelTime {
 
 		// 根据屏幕密度来指定选择器字体的大小(不同屏幕可能不同)
 		int textSize = 6;
+
+		wv_sec.setVisibility(View.GONE);
+
 		switch(type){
 		case ALL:
 			textSize = textSize * 3;
@@ -238,6 +257,14 @@ public class WheelTime {
 			wv_year.setVisibility(View.GONE);
 			wv_month.setVisibility(View.GONE);
 			wv_day.setVisibility(View.GONE);
+			break;
+		case MINS_SEC:
+			textSize = textSize * 4;
+			wv_year.setVisibility(View.GONE);
+			wv_month.setVisibility(View.GONE);
+			wv_day.setVisibility(View.GONE);
+			wv_hours.setVisibility(View.GONE);
+			wv_sec.setVisibility(View.VISIBLE);
 			break;
 		case MONTH_DAY_HOUR_MIN:
 			textSize = textSize * 3;
@@ -254,7 +281,7 @@ public class WheelTime {
 		wv_year.setTextSize(textSize);
 		wv_hours.setTextSize(textSize);
 		wv_mins.setTextSize(textSize);
-
+		wv_sec.setTextSize(textSize);
 	}
 
 	/**
@@ -267,6 +294,7 @@ public class WheelTime {
 		wv_day.setCyclic(cyclic);
 		wv_hours.setCyclic(cyclic);
 		wv_mins.setCyclic(cyclic);
+		wv_sec.setCyclic(cyclic);
 	}
 	public String getTime() {
 		StringBuffer sb = new StringBuffer();
@@ -274,7 +302,8 @@ public class WheelTime {
 			.append((wv_month.getCurrentItem() + 1)).append("-")
 			.append((wv_day.getCurrentItem() + 1)).append(" ")
 			.append(wv_hours.getCurrentItem()).append(":")
-			.append(wv_mins.getCurrentItem());
+			.append(wv_mins.getCurrentItem()).append(":")
+			.append(wv_sec.getCurrentItem());
 		return sb.toString();
 	}
 

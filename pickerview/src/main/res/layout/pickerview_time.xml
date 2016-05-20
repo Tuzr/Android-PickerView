@@ -2,7 +2,16 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:id="@+id/timeMainLL">
+
+    <LinearLayout
+        android:id="@+id/timeDivider"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#F65F1E">
+    </LinearLayout>
 
     <include
         layout="@layout/include_pickerview_topbar"
@@ -43,6 +52,12 @@
 
         <com.bigkoo.pickerview.lib.WheelView
             android:id="@+id/min"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.1" />
+
+        <com.bigkoo.pickerview.lib.WheelView
+            android:id="@+id/sec"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1.1" />
