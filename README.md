@@ -1,4 +1,4 @@
-PickerView (2.x系列)
+PickerView
 ==========
 
 This Android-picker-view is branch from [saiwu-bigkoo](https://github.com/saiwu-bigkoo/Android-PickerView)<br />
@@ -7,8 +7,8 @@ Hope it will help you,too.<br />
 Please enjoy it!<br />
 
 ## Demo
-![](https://github.com/Tuzr/Android-PickerView/tree/master/preview/time.png)
-![](https://github.com/saiwu-bigkoo/PickerView/blob/master/preview/con.png)
+![](https://github.com/Tuzr/Android-PickerView/blob/master/preview/time.png)
+![](https://github.com/Tuzr/PickerView/blob/master/preview/con.png)
 
 
 - [demo code here](https://github.com/Tuzr/Android-PickerView/blob/master/app/src/main/java/com/bigkoo/pickerviewdemo/MainActivity.java)
