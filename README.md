@@ -8,7 +8,7 @@ Please enjoy it!<br />
 
 ## Demo
 ![](https://github.com/Tuzr/Android-PickerView/blob/master/preview/time.png)
-![](https://github.com/Tuzr/PickerView/blob/master/preview/con.png)
+![](https://github.com/Tuzr/Android-PickerView/blob/master/preview/con.png)
 
 
 - [demo code here](https://github.com/Tuzr/Android-PickerView/blob/master/app/src/main/java/com/bigkoo/pickerviewdemo/MainActivity.java)
